@@ -141,26 +141,38 @@ Verify connection:
 kubectl get nodes
 ```
 
-### Step 4: Configure Pulumi
+### Step 4: Configure Pulumi and Deploy
 
 ```bash
 # Login to Pulumi (local backend, no account needed)
 pulumi login --local
+
+# Set empty passphrase so Pulumi never asks for a password
+export PULUMI_CONFIG_PASSPHRASE=""
 
 # Create a new stack
 pulumi stack init dev
 
 # Set Kubernetes context
 pulumi config set kubernetes:context $(kubectl config current-context)
-```
 
-### Step 5: Deploy
-
-```bash
+# Deploy everything
 pulumi up
 ```
 
-When prompted, type `yes` to confirm.
+When prompted `Do you want to perform this update?`, type `yes` to confirm.
+
+> **Passphrase Troubleshooting:**
+> - If you get "incorrect passphrase" error, it means the passphrase does not match what was used during `pulumi stack init dev`.
+> - The simplest approach is to always set `export PULUMI_CONFIG_PASSPHRASE=""` BEFORE running any pulumi command.
+> - If you are stuck, delete the stack and start fresh:
+>   ```bash
+>   pulumi stack rm dev --force
+>   export PULUMI_CONFIG_PASSPHRASE=""
+>   pulumi stack init dev
+>   pulumi config set kubernetes:context $(kubectl config current-context)
+>   pulumi up
+>   ```
 
 This deploys:
 - **guestbook namespace**: Frontend (3 replicas), Redis Leader (1 replica), Redis Followers (2 replicas)
