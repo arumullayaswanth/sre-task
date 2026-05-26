@@ -1,12 +1,3 @@
 name: pulumi-guestbook-monitoring
 runtime: nodejs
 description: Kubernetes Guestbook application with Prometheus and Grafana monitoring
-config:
-  kubernetes:context:
-    description: The Kubernetes context to use
-  guestbook:namespace:
-    default: guestbook
-    description: Namespace for the Guestbook application
-  monitoring:namespace:
-    default: monitoring
-    description: Namespace for Prometheus and Grafana
