@@ -181,6 +181,51 @@ This deploys:
 - **guestbook namespace**: Frontend (3 replicas), Redis Leader (1 replica), Redis Followers (2 replicas)
 - **monitoring namespace**: Prometheus, Grafana, AlertManager, node-exporter, kube-state-metrics
 
+### Step 5: Verify Everything is Running
+
+**5a. Check all pods are running**
+
+```bash
+# Check Guestbook pods
+kubectl get pods -n guestbook
+```
+
+Expected output (all should be Running):
+```
+NAME                              READY   STATUS    RESTARTS   AGE
+frontend-xxxxx-yyyyy              1/1     Running   0          2m
+frontend-xxxxx-zzzzz              1/1     Running   0          2m
+frontend-xxxxx-aaaaa              1/1     Running   0          2m
+redis-leader-xxxxx-bbbbb          2/2     Running   0          2m
+redis-follower-xxxxx-ccccc        2/2     Running   0          2m
+redis-follower-xxxxx-ddddd        2/2     Running   0          2m
+```
+
+> Notice redis pods show `2/2` — that's the Redis container + the Redis Exporter sidecar!
+
+```bash
+# Check Monitoring pods
+kubectl get pods -n monitoring
+```
+
+Expected output:
+```
+NAME                                                     READY   STATUS    RESTARTS   AGE
+kube-prometheus-stack-grafana-xxxxx                       3/3     Running   0          3m
+kube-prometheus-stack-prometheus-node-exporter-xxxxx      1/1     Running   0          3m
+kube-prometheus-stack-kube-state-metrics-xxxxx            1/1     Running   0          3m
+prometheus-kube-prometheus-stack-prometheus-0             2/2     Running   0          3m
+alertmanager-kube-prometheus-stack-alertmanager-0         2/2     Running   0          3m
+kube-prometheus-stack-operator-xxxxx                      1/1     Running   0          3m
+```
+
+**5b. Check all services**
+
+```bash
+kubectl get svc -n guestbook
+kubectl get svc -n monitoring
+```
+
 ### Step 6: Get Application URLs
 
 ```bash
