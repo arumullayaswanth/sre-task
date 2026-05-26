@@ -153,6 +153,9 @@ export PULUMI_CONFIG_PASSPHRASE=""
 # Create a new stack
 pulumi stack init dev
 
+# If it says "stack already exists", just select it instead:
+# pulumi stack select dev
+
 # Set Kubernetes context
 pulumi config set kubernetes:context $(kubectl config current-context)
 
