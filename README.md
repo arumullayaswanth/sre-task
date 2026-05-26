@@ -31,14 +31,86 @@ This project deploys the classic Kubernetes Guestbook application with full obse
 
 ---
 
-## Prerequisites
+## Before You Start (Prerequisites)
 
-- [Node.js](https://nodejs.org/) (v18+)
-- [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-- A running Kubernetes cluster (EKS, Minikube, kind, GKE, AKS, etc.)
-- [Helm](https://helm.sh/docs/intro/install/) (Pulumi uses it under the hood for Helm charts)
+Make sure you have these installed on your machine:
+
+| Tool | Check if installed | Install link |
+|------|-------------------|--------------|
+| AWS CLI | `aws --version` | https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html |
+| kubectl | `kubectl version --client` | https://kubernetes.io/docs/tasks/tools/ |
+| Pulumi CLI | `pulumi version` | https://www.pulumi.com/docs/get-started/install/ |
+| Node.js | `node --version` | https://nodejs.org/ |
+| Helm | `helm version` | https://helm.sh/docs/intro/install/ |
+
+You also need a running Kubernetes cluster (EKS, Minikube, kind, GKE, AKS, etc.)
+
+---
+
+### Install Node.js and Pulumi on Amazon Linux (EC2)
+
+If you are running commands from an EC2 instance or Amazon Linux machine, follow these steps:
+
+**1. Install Node.js**
+
+Check whether Node.js is already installed:
+```bash
+node --version
+```
+
+If not installed:
+
+Amazon Linux 2023:
+```bash
+sudo dnf install nodejs -y
+```
+
+Amazon Linux 2:
+```bash
+sudo yum install nodejs -y
+```
+
+Verify:
+```bash
+node --version
+npm --version
+```
+
+**2. Install Pulumi CLI**
+
+Install Pulumi using the official installation script:
+```bash
+curl -fsSL https://get.pulumi.com | sh
+```
+
+Add Pulumi to your PATH (if needed):
+```bash
+export PATH=$PATH:$HOME/.pulumi/bin
+```
+
+To make it permanent:
+```bash
+echo 'export PATH=$PATH:$HOME/.pulumi/bin' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Verify installation:
+```bash
+pulumi version
+```
+
+**3. Verify All Tools**
+
+```bash
+node --version
+npm --version
+pulumi version
+aws --version
+kubectl version --client
+helm version
+```
+
+All commands should return version numbers without errors.
 
 ---
 
