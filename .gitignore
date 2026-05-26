@@ -1,0 +1,8 @@
+node_modules/
+bin/
+.pulumi/
+Pulumi.*.yaml.bak
+*.js
+*.js.map
+*.d.ts
+!jest.config.js
