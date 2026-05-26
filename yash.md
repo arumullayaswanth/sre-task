@@ -1,10 +1,10 @@
-# 🚀 Yash's Complete Guide: Deploy & Test Guestbook + Monitoring on EKS
+# Yash's Complete Guide: Deploy & Test Guestbook + Monitoring on EKS
 
 > This guide is written like you're explaining it to a kid. Follow each step one by one. Don't skip anything.
 
 ---
 
-## 📋 Before You Start (Prerequisites)
+## Before You Start (Prerequisites)
 
 Make sure you have these installed on your machine:
 
@@ -18,7 +18,7 @@ Make sure you have these installed on your machine:
 
 ---
 
-## 🔑 Step 1: Connect to Your EKS Cluster
+## Step 1: Connect to Your EKS Cluster
 
 You already created your EKS cluster. Now tell your computer to talk to it.
 
@@ -34,7 +34,7 @@ aws eks update-kubeconfig --name <your-cluster-name> --region <your-region>
 aws eks update-kubeconfig --name my-guestbook-cluster --region us-east-1
 ```
 
-### ✅ Verify you're connected:
+### Verify you're connected:
 ```bash
 kubectl get nodes
 ```
@@ -46,16 +46,16 @@ ip-192-168-1-100.ec2.internal                  Ready    <none>   5m    v1.28.x
 ip-192-168-2-200.ec2.internal                  Ready    <none>   5m    v1.28.x
 ```
 
-If you see nodes = you're connected! 🎉
+If you see nodes = you're connected!
 
 ---
 
-## 📦 Step 2: Install Project Dependencies
+## Step 2: Install Project Dependencies
 
 Open your terminal, go to the project folder:
 
 ```bash
-cd "C:\Users\Yaswanth Reddy\OneDrive - vitap.ac.in\Desktop\SRE"
+git clone https://github.com/arumullayaswanth/sre-task.git
 ```
 
 Install the Node.js packages:
@@ -68,7 +68,7 @@ npm install
 
 ---
 
-## 🔐 Step 3: Setup Pulumi
+## Step 3: Setup Pulumi
 
 ### 3a. Login to Pulumi (use local backend — no account needed)
 
@@ -107,7 +107,7 @@ pulumi config set kubernetes:context arn:aws:eks:us-east-1:123456789:cluster/my-
 
 ---
 
-## 🚀 Step 4: DEPLOY EVERYTHING
+## Step 4: DEPLOY EVERYTHING
 
 This is the big moment. One command deploys the entire application + monitoring:
 
@@ -123,10 +123,10 @@ pulumi up
 **Wait time:** This takes about 3-5 minutes. You'll see resources being created one by one.
 
 **What gets created:**
-- ✅ `guestbook` namespace with Frontend + Redis
-- ✅ `monitoring` namespace with Prometheus + Grafana
-- ✅ ServiceMonitors to connect them
-- ✅ A pre-built Grafana dashboard
+- `guestbook` namespace with Frontend + Redis
+- `monitoring` namespace with Prometheus + Grafana
+- ServiceMonitors to connect them
+- A pre-built Grafana dashboard
 
 When it's done, you'll see output like:
 ```
@@ -143,7 +143,7 @@ Resources:
 
 ---
 
-## ✅ Step 5: Verify Everything is Running
+## Step 5: Verify Everything is Running
 
 ### 5a. Check all pods are running
 
@@ -190,7 +190,7 @@ kubectl get svc -n monitoring
 
 ---
 
-## 🌐 Step 6: Access the Guestbook Application
+## Step 6: Access the Guestbook Application
 
 ```bash
 kubectl get svc frontend -n guestbook
@@ -207,11 +207,11 @@ frontend   LoadBalancer   10.100.x.x      a1b2c3d4e5.us-east-1.elb.amazonaws.com
 
 You should see the Guestbook app! Try typing a message and clicking Submit.
 
-> ⏳ Note: EKS LoadBalancers take 2-3 minutes to provision. If EXTERNAL-IP shows `<pending>`, wait and try again.
+> Note: EKS LoadBalancers take 2-3 minutes to provision. If EXTERNAL-IP shows `<pending>`, wait and try again.
 
 ---
 
-## 📊 Step 7: Access Grafana
+## Step 7: Access Grafana
 
 ### Option A: Get the LoadBalancer URL (recommended for EKS)
 
@@ -238,22 +238,22 @@ Password: admin123
 
 ### Find the Guestbook Dashboard:
 
-1. Click the **hamburger menu** (☰) on the left
+1. Click the hamburger menu on the left
 2. Click **Dashboards**
 3. Look for folder called **"Guestbook"**
 4. Click **"Guestbook Application Dashboard"**
 
 You'll see panels showing:
-- 📈 Pod CPU Usage
-- 📈 Pod Memory Usage
-- 📈 Network traffic
-- 📈 Redis commands per second
-- 📈 Redis memory usage
-- 📈 Frontend request rates
+- Pod CPU Usage
+- Pod Memory Usage
+- Network traffic
+- Redis commands per second
+- Redis memory usage
+- Frontend request rates
 
 ---
 
-## 🔍 Step 8: Access Prometheus & Verify Scraping
+## Step 8: Access Prometheus & Verify Scraping
 
 ### 8a. Open Prometheus UI
 
@@ -265,7 +265,7 @@ Open: **http://localhost:9090**
 
 ### 8b. Check Targets are being scraped
 
-1. In Prometheus UI, click **Status** → **Targets**
+1. In Prometheus UI, click **Status** then **Targets**
 2. Look for these jobs:
    - `kubernetes-pods` — should show guestbook pods as UP
    - `kubernetes-service-endpoints` — should show guestbook services
@@ -307,13 +307,13 @@ Expected: Shows memory in bytes for each container
 
 ---
 
-## 🧪 Step 9: End-to-End Test (Prove Everything Works)
+## Step 9: End-to-End Test (Prove Everything Works)
 
 ### Test 1: Guestbook works
 1. Open the Guestbook URL in browser
 2. Type "Hello World" in the text box
 3. Click Submit
-4. ✅ You should see "Hello World" appear in the messages list
+4. You should see "Hello World" appear in the messages list
 
 ### Test 2: Redis is storing data
 ```bash
@@ -343,8 +343,8 @@ frontend-metrics   5m
 
 ### Test 4: Grafana dashboard has data
 1. Open Grafana (http://localhost:3000 or LoadBalancer URL)
-2. Go to Dashboards → Guestbook → Guestbook Application Dashboard
-3. ✅ You should see graphs with actual data points (not empty)
+2. Go to Dashboards then Guestbook then Guestbook Application Dashboard
+3. You should see graphs with actual data points (not empty)
 
 ### Test 5: Generate some traffic and watch metrics
 ```bash
@@ -357,20 +357,20 @@ Now go back to Grafana — you should see a spike in the network/request panels!
 
 ---
 
-## 📸 Step 10: Take Screenshots for Submission
+## Step 10: Take Screenshots for Submission
 
 Take screenshots of:
-1. ✅ `pulumi up` output showing successful deployment
-2. ✅ `kubectl get pods -n guestbook` showing all pods Running
-3. ✅ `kubectl get pods -n monitoring` showing all pods Running
-4. ✅ Guestbook app working in browser
-5. ✅ Grafana dashboard with metrics
-6. ✅ Prometheus Targets page showing guestbook targets as UP
-7. ✅ Prometheus query `redis_up{namespace="guestbook"}` returning results
+1. `pulumi up` output showing successful deployment
+2. `kubectl get pods -n guestbook` showing all pods Running
+3. `kubectl get pods -n monitoring` showing all pods Running
+4. Guestbook app working in browser
+5. Grafana dashboard with metrics
+6. Prometheus Targets page showing guestbook targets as UP
+7. Prometheus query `redis_up{namespace="guestbook"}` returning results
 
 ---
 
-## 🧹 Cleanup (After Submission)
+## Cleanup (After Submission)
 
 When you're done and want to delete everything:
 
@@ -387,7 +387,7 @@ pulumi stack rm dev
 
 ---
 
-## 🆘 Troubleshooting
+## Troubleshooting
 
 ### Problem: Pods stuck in "Pending"
 ```bash
@@ -432,7 +432,7 @@ kubectl get nodes
 
 ---
 
-## 📝 Quick Reference Card
+## Quick Reference Card
 
 | What | Command |
 |------|---------|
@@ -450,7 +450,7 @@ kubectl get nodes
 
 ---
 
-## 🎯 Summary: What This Project Does
+## Summary: What This Project Does
 
 ```
 YOU RUN: pulumi up
@@ -476,4 +476,4 @@ Prometheus → Feeds data to → Grafana dashboards
 
 ---
 
-Good luck with your submission, Yash! 🎉
+Good luck with your submission, Yash!
