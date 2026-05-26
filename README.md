@@ -283,6 +283,29 @@ To find it: **Dashboards > Guestbook > Guestbook Application Dashboard**
 
 ### Method 1: Check Prometheus Targets UI
 
+**For EC2 (access from your browser remotely):**
+
+```bash
+kubectl port-forward --address 0.0.0.0 svc/kube-prometheus-stack-prometheus 9090:9090 -n monitoring
+```
+
+Access: `http://<EC2-PUBLIC-IP>:9090`
+
+Example: `http://98.82.20.38:9090`
+
+Also open inbound TCP port 9090 in the EC2 Security Group.
+
+To find the EC2 public IP:
+```bash
+curl ifconfig.me
+```
+or
+```bash
+curl http://169.254.169.254/latest/meta-data/public-ipv4
+```
+
+**For localhost:**
+
 ```bash
 kubectl port-forward svc/kube-prometheus-stack-prometheus 9090:9090 -n monitoring
 ```
