@@ -6,7 +6,7 @@ This project deploys the classic Kubernetes Guestbook application with full obse
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Kubernetes Cluster                             │
+│                    Kubernetes Cluster (EKS)                       │
 │                                                                   │
 │  ┌─────────────── guestbook namespace ───────────────────────┐   │
 │  │                                                            │   │
@@ -29,81 +29,103 @@ This project deploys the classic Kubernetes Guestbook application with full obse
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+---
+
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18+)
 - [Pulumi CLI](https://www.pulumi.com/docs/get-started/install/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- A running Kubernetes cluster (Minikube, kind, EKS, GKE, AKS, etc.)
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- A running Kubernetes cluster (EKS, Minikube, kind, GKE, AKS, etc.)
 - [Helm](https://helm.sh/docs/intro/install/) (Pulumi uses it under the hood for Helm charts)
 
-## Quick Start
+---
 
-### 1. Clone and Install Dependencies
+## Instructions to Deploy the Application
+
+### Step 1: Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd pulumi-guestbook-monitoring
+git clone https://github.com/arumullayaswanth/sre-task.git
+cd sre-task
+```
+
+### Step 2: Install Dependencies
+
+```bash
 npm install
 ```
 
-### 2. Configure Pulumi
+### Step 3: Connect to Your Kubernetes Cluster
+
+For EKS:
+```bash
+aws eks update-kubeconfig --name <your-cluster-name> --region <your-region>
+```
+
+Verify connection:
+```bash
+kubectl get nodes
+```
+
+### Step 4: Configure Pulumi
 
 ```bash
-# Login to Pulumi (use local backend for testing)
+# Login to Pulumi (local backend, no account needed)
 pulumi login --local
 
 # Create a new stack
 pulumi stack init dev
+
+# Set Kubernetes context
+pulumi config set kubernetes:context $(kubectl config current-context)
 ```
 
-### 3. Set Configuration (Optional)
-
-```bash
-# Set Kubernetes context (if not using default)
-pulumi config set kubernetes:context <your-context>
-
-# Customize namespaces (optional, defaults shown)
-pulumi config set guestbook:namespace guestbook
-pulumi config set monitoring:namespace monitoring
-```
-
-### 4. Deploy
+### Step 5: Deploy
 
 ```bash
 pulumi up
 ```
 
-This will deploy:
-- **Guestbook namespace**: Frontend (3 replicas), Redis Leader, Redis Followers (2 replicas)
-- **Monitoring namespace**: Prometheus, Grafana, AlertManager, node-exporter, kube-state-metrics
+When prompted, type `yes` to confirm.
 
-### 5. Access the Application
+This deploys:
+- **guestbook namespace**: Frontend (3 replicas), Redis Leader (1 replica), Redis Followers (2 replicas)
+- **monitoring namespace**: Prometheus, Grafana, AlertManager, node-exporter, kube-state-metrics
 
-After deployment, Pulumi will output access details. You can also use:
+### Step 6: Get Application URLs
 
 ```bash
-# Guestbook Frontend
+# Guestbook Frontend URL
 kubectl get svc frontend -n guestbook
 
-# If using Minikube
-minikube service frontend -n guestbook
+# Grafana URL
+kubectl get svc kube-prometheus-stack-grafana -n monitoring
 ```
 
-## Grafana Access
+Copy the `EXTERNAL-IP` from the output and open in your browser.
+
+---
+
+## Grafana Access URL and Admin Credentials
 
 ### Access URL
 
 ```bash
-# Get Grafana external IP (LoadBalancer)
+# Get Grafana LoadBalancer URL
 kubectl get svc kube-prometheus-stack-grafana -n monitoring
-
-# Port-forward (for local clusters like Minikube/kind)
-kubectl port-forward svc/kube-prometheus-stack-grafana 3000:80 -n monitoring
-# Then open: http://localhost:3000
 ```
 
-### Default Admin Credentials
+The EXTERNAL-IP column shows the Grafana URL. Open: `http://<EXTERNAL-IP>`
+
+If using port-forward (for local clusters):
+```bash
+kubectl port-forward svc/kube-prometheus-stack-grafana 3000:80 -n monitoring
+```
+Then open: http://localhost:3000
+
+### Admin Credentials
 
 | Field    | Value      |
 |----------|------------|
@@ -112,7 +134,7 @@ kubectl port-forward svc/kube-prometheus-stack-grafana 3000:80 -n monitoring
 
 ### Pre-configured Dashboard
 
-A custom **"Guestbook Application Dashboard"** is automatically provisioned with:
+A custom **"Guestbook Application Dashboard"** is automatically provisioned with panels for:
 - Pod CPU Usage (Guestbook namespace)
 - Pod Memory Usage (Guestbook namespace)
 - Network Receive/Transmit rates
@@ -121,64 +143,95 @@ A custom **"Guestbook Application Dashboard"** is automatically provisioned with
 - Redis Memory Usage
 - Frontend HTTP Request rates
 
-Navigate to: **Dashboards → Guestbook → Guestbook Application Dashboard**
+To find it: **Dashboards > Guestbook > Guestbook Application Dashboard**
 
-## Verifying Prometheus is Scraping Guestbook Metrics
+---
 
-### 1. Access Prometheus UI
+## How to Verify That Guestbook Metrics Are Being Scraped by Prometheus
+
+### Method 1: Check Prometheus Targets UI
 
 ```bash
 kubectl port-forward svc/kube-prometheus-stack-prometheus 9090:9090 -n monitoring
-# Open: http://localhost:9090
 ```
 
-### 2. Check Targets
+Open http://localhost:9090, then navigate to **Status > Targets**.
 
-Navigate to **Status → Targets** in the Prometheus UI. You should see:
+You should see:
+- `kubernetes-pods` job with guestbook pods listed as **UP**
+- `kubernetes-service-endpoints` job with guestbook services as **UP**
+- `serviceMonitor/guestbook/redis-metrics` showing Redis exporters as **UP**
 
-- `kubernetes-pods` job with guestbook pods listed
-- `kubernetes-service-endpoints` job with guestbook services
-- Redis exporter targets showing as `UP`
+### Method 2: Run PromQL Queries
 
-### 3. Query Guestbook Metrics
-
-In the Prometheus expression browser, try these queries:
+In the Prometheus expression browser (http://localhost:9090/graph), run these queries:
 
 ```promql
-# Redis metrics from the guestbook namespace
+# Verify Redis exporters are up
 redis_up{namespace="guestbook"}
+```
+Expected result: Value `1` for each Redis pod.
 
-# Redis commands processed
+```promql
+# Redis commands processed per second
 rate(redis_commands_processed_total{namespace="guestbook"}[5m])
+```
+Expected result: A numeric value showing commands being processed.
 
+```promql
 # Redis connected clients
 redis_connected_clients{namespace="guestbook"}
+```
+Expected result: At least 1 connected client per Redis instance.
 
-# Redis memory usage
-redis_memory_used_bytes{namespace="guestbook"}
-
+```promql
 # Container CPU usage for guestbook pods
 sum(rate(container_cpu_usage_seconds_total{namespace="guestbook"}[5m])) by (pod)
+```
+Expected result: CPU usage values per pod.
 
-# Container memory for guestbook pods
+```promql
+# Container memory usage for guestbook pods
 container_memory_working_set_bytes{namespace="guestbook"}
+```
+Expected result: Memory usage in bytes per container.
 
-# Network traffic
+```promql
+# Network traffic for guestbook pods
 rate(container_network_receive_bytes_total{namespace="guestbook"}[5m])
 ```
+Expected result: Network receive rate per pod.
 
-### 4. Verify via kubectl
+### Method 3: Verify via kubectl
 
 ```bash
 # Check ServiceMonitors are created
 kubectl get servicemonitors -n guestbook
+```
 
+Expected output:
+```
+NAME               AGE
+redis-metrics      5m
+frontend-metrics   5m
+```
+
+```bash
 # Check Prometheus is running
 kubectl get pods -n monitoring -l app.kubernetes.io/name=prometheus
-
-# Check Redis exporters are running
-kubectl get pods -n guestbook -o wide
 ```
+
+```bash
+# Check Redis exporters are running (2/2 means exporter sidecar is active)
+kubectl get pods -n guestbook
+```
+
+```bash
+# Check all guestbook services
+kubectl get svc -n guestbook
+```
+
+---
 
 ## Monitoring Stack Components
 
@@ -193,11 +246,28 @@ kubectl get pods -n guestbook -o wide
 
 ## Metrics Collection Strategy
 
-1. **Annotation-based scraping**: Pods with `prometheus.io/scrape: "true"` annotations are automatically discovered
-2. **ServiceMonitor CRDs**: Prometheus Operator ServiceMonitors for structured metric collection
-3. **Redis Exporter sidecars**: Dedicated exporters running alongside Redis pods expose Redis-specific metrics
+1. **Annotation-based scraping**: Pods with `prometheus.io/scrape: "true"` annotations are automatically discovered by Prometheus
+2. **ServiceMonitor CRDs**: Prometheus Operator ServiceMonitors for structured metric collection from Redis and Frontend services
+3. **Redis Exporter sidecars**: Dedicated exporters running alongside Redis pods expose Redis-specific metrics (commands/sec, memory, connected clients)
 4. **kube-state-metrics**: Provides Kubernetes object metrics (deployments, pods, services)
-5. **node-exporter**: Provides node-level system metrics
+5. **node-exporter**: Provides node-level system metrics (CPU, memory, disk)
+
+---
+
+## Project Structure
+
+```
+.
+├── index.ts              # Main Pulumi program (all infrastructure code)
+├── package.json          # Node.js dependencies
+├── tsconfig.json         # TypeScript configuration
+├── Pulumi.yaml           # Pulumi project definition
+├── Pulumi.dev.yaml       # Dev stack configuration
+├── yash.md              # Detailed step-by-step testing guide
+└── README.md             # This file
+```
+
+---
 
 ## Cleanup
 
@@ -206,56 +276,40 @@ pulumi destroy
 pulumi stack rm dev
 ```
 
+---
+
 ## Troubleshooting
 
-### Pods stuck in Pending
+### Pods stuck in "Pending"
 ```bash
 kubectl describe pod <pod-name> -n <namespace>
-# Check for resource constraints or scheduling issues
+```
+Usually means not enough resources on nodes. Add more or bigger nodes.
+
+### LoadBalancer shows `<pending>` forever
+Use port-forward as alternative:
+```bash
+kubectl port-forward svc/frontend 8080:80 -n guestbook
+kubectl port-forward svc/kube-prometheus-stack-grafana 3000:80 -n monitoring
 ```
 
-### Grafana not accessible
-```bash
-# Check service status
-kubectl get svc -n monitoring
-# Check pod logs
-kubectl logs -l app.kubernetes.io/name=grafana -n monitoring
-```
-
-### Prometheus not scraping targets
-```bash
-# Check Prometheus config
-kubectl get configmap -n monitoring
-# Check ServiceMonitor resources
-kubectl get servicemonitors --all-namespaces
-# View Prometheus logs
-kubectl logs -l app.kubernetes.io/name=prometheus -n monitoring -c prometheus
-```
+### Grafana shows "No data" in panels
+- Wait 2-3 minutes for Prometheus to collect initial data
+- Access the Guestbook app at least once to generate traffic
+- Verify Prometheus targets are UP
 
 ### Helm release issues
 ```bash
-# Check Helm release status
-helm list -n monitoring
-# Get release history
-helm history kube-prometheus-stack -n monitoring
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 ```
 
-## Project Structure
-
-```
-.
-├── index.ts              # Main Pulumi program
-├── package.json          # Node.js dependencies
-├── tsconfig.json         # TypeScript configuration
-├── Pulumi.yaml           # Pulumi project definition
-├── Pulumi.dev.yaml       # Dev stack configuration
-└── README.md             # This file
-```
+---
 
 ## Technology Stack
 
 - **IaC**: Pulumi (TypeScript)
-- **Container Orchestration**: Kubernetes
+- **Container Orchestration**: Kubernetes (EKS)
 - **Application**: Guestbook (PHP frontend + Redis backend)
 - **Monitoring**: Prometheus + Grafana (via kube-prometheus-stack Helm chart)
 - **Metrics Export**: Redis Exporter (oliver006/redis_exporter)
